@@ -28,10 +28,11 @@ def ask_size():
     lens = []
     if rank == center:
         for i in range(1,size):
-            lenght = mpi.recv(source=i)
+            lenght = mpi.COMM_WORLD.recv(source=i)
+            print("Total lenght :{} in the process {}.".format(lenght, i))
             lens.append(lenght)
         #The process chosen to take the var is the one with lowest vars size
-        amin = np.argmin(lens)
+        amin = np.argmin(lens)+1
         for i in range(1, size):
             #We can tell everybody who get the var
             mpi.COMM_WORLD.send(amin, dest=amin)
@@ -54,18 +55,22 @@ def allocate(obj, r):
     #First ask center where there is enough space
     #If b is set to True, the current process is the one choosen
     b = ask_size()
+    if b == rank:
+        print("I'm the process {} and was choosen for hold the new data.".format(rank))
     if rank == center:
-        obj = mpi.COMM_WORLD.recv(source=r)
-        mpi.COMM_WORLD.send(sys.getsizeof(obj),dest=b)
+        obj_size = mpi.COMM_WORLD.recv(source=r)
+        mpi.COMM_WORLD.send(obj_size, dest=b)
         pos = mpi.COMM_WORLD.recv(source=b)
         if pos < 0:
             print("Variable couldn't be allocated on any process.")
         else:
+            print("0 sends {} to {}".format(pos+MAX_SIZE*(b-1), r))
             mpi.COMM_WORLD.send(pos + MAX_SIZE*(b-1), dest=r)
+            print("0 sends {} to {}".format(pos+MAX_SIZE*(b-1), r))
 
         #Do something nice
     if rank == r:
-        mpi.COMM_WORLD.send(obj, dest=center)
+        mpi.COMM_WORLD.send(sys.getsizeof(obj), dest=center)
     if rank == b:
         lenght = mpi.COMM_WORLD.recv(source=center)
         if size_vars() + lenght < MAX_SIZE:
@@ -89,8 +94,8 @@ def main():
         print("received from 1 {}".format(valeur))
 
 if __name__ == "__main__":
-    allocate(rank+1)
-    allocate([i for i in range(2*rank+1)])
+    allocate(rank+1, rank)
+    allocate([i for i in range(2*rank+1)], rank)
     print("Vars: {1}  \tSize: {0}.".format(size_vars(), all_vars))
     sys.stdout.flush()
 
