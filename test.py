@@ -42,10 +42,10 @@ def ask_size():
         return b == rank
         
 
-#Il manque un truc, il faut que le process qui appelle ca soit le seul a
-#a envoyer obj
 def allocate(obj, r):
     '''
+    Obj is the object to allocate, r is the rank of the process who call this
+    function.
     Allocate is just a way to find somewhere to stock the variable.
     We need to check the size on each process and add the variable on a
     process with free space.
@@ -55,6 +55,7 @@ def allocate(obj, r):
     #If b is set to True, the current process is the one choosen
     b = ask_size()
     if rank == center:
+        obj = mpi.COMM_WORLD.recv(source=r)
         mpi.COMM_WORLD.send(sys.getsizeof(obj),dest=b)
         pos = mpi.COMM_WORLD.recv(source=b)
         if pos < 0:
@@ -63,7 +64,9 @@ def allocate(obj, r):
             mpi.COMM_WORLD.send(pos + MAX_SIZE*(b-1), dest=r)
 
         #Do something nice
-    elif rank == b:
+    if rank == r:
+        mpi.COMM_WORLD.send(obj, dest=center)
+    if rank == b:
         lenght = mpi.COMM_WORLD.recv(source=center)
         if size_vars() + lenght < MAX_SIZE:
             mpi.COMM_WORLD.send(len(all_vars), dest=center)
@@ -71,7 +74,7 @@ def allocate(obj, r):
             #function function
         else:
             mpi.COMM_WORLD.send(-1, dest=center)
-    elif rank == r:
+    if rank == r:
         res = mpi.COMM_WORLD.recv(source=center)
         return res
 
