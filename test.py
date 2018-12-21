@@ -35,7 +35,7 @@ def ask_size():
         for i in range(1, size):
             #We can tell everybody who get the var
             mpi.COMM_WORLD.send(amin, dest=amin)
-        return 0
+        return amin
     else:
         mpi.COMM_WORLD.send(size_vars(), dest=center)
         b = mpi.COMM_WORLD.recv(source=center)
@@ -44,7 +44,7 @@ def ask_size():
 
 #Il manque un truc, il faut que le process qui appelle ca soit le seul a
 #a envoyer obj
-def allocate(obj):
+def allocate(obj, r):
     '''
     Allocate is just a way to find somewhere to stock the variable.
     We need to check the size on each process and add the variable on a
@@ -52,28 +52,28 @@ def allocate(obj):
     It return the location of the variable (typically an index).
     '''
     #First ask center where there is enough space
+    #If b is set to True, the current process is the one choosen
     b = ask_size()
     if rank == center:
-        mpi.COMM_WORLD.send(sys.getsizeof(obj),dest=b) #<-- that is something to do in
-        #modify I think
+        mpi.COMM_WORLD.send(sys.getsizeof(obj),dest=b)
+        pos = mpi.COMM_WORLD.recv(source=b)
+        if pos < 0:
+            print("Variable couldn't be allocated on any process.")
+        else:
+            mpi.COMM_WORLD.send(pos + MAX_SIZE*(b-1), dest=r)
+
         #Do something nice
     elif rank == b:
         lenght = mpi.COMM_WORLD.recv(source=center)
         if size_vars() + lenght < MAX_SIZE:
-            mpi.COMM_WORLD.send(1, dest=center)
-            obj = mpi.COMM_WORLD.recv(source=center)
-
-        #Do something nice
-    else:
-        lenght = mpi.COMM_WORLD.recv(source=center)
-        if size_vars() + lenght < MAX_SIZE:
-            #all_vars.append(obj)
-
-        #Do something interesting
-        
-
-    #else send a message to center ?
-
+            mpi.COMM_WORLD.send(len(all_vars), dest=center)
+            #obj = mpi.COMM_WORLD.recv(source=center) <-- This is the modify
+            #function function
+        else:
+            mpi.COMM_WORLD.send(-1, dest=center)
+    elif rank == r:
+        res = mpi.COMM_WORLD.recv(source=center)
+        return res
 
 
 def main():
