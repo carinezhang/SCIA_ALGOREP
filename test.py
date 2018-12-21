@@ -3,7 +3,7 @@ import sys
 import numpy as np
 
 MAX_SIZE = 4096
-centre = 0
+center = 0
 rank = mpi.COMM_WORLD.rank
 size = mpi.COMM_WORLD.size
 
