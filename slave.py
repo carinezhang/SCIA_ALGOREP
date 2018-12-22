@@ -41,8 +41,8 @@ class Slave:
         """
         if var_name not in self.mem:
             return False
-        #if var_name in self.history or self.history[var_name][-1] > timestamp:
-        #    return False
+        if var_name not in self.history or self.history[var_name][-1] > timestamp:
+            return False
         var = self.mem[var_name]
         if isinstance(var, int):
             self.mem[var_name] = new_var
