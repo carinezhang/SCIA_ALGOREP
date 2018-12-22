@@ -16,8 +16,25 @@ class Slave:
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
         self.size = 0
-        self.mem = []
+        self.mem = dict()
+        self.nb_vars = 0
 
+    def allocate(self, var):
+        """
+        Allocate a variable and return an id associate with the variable. 
+        Increase the size taken.
+        """
+        name = str(self.rank) + "/" + str(self.nb_vars)
+        self.mem[name] = var
+        # Check if the var is int or list to increase the size
+        if isinstance(var, int):
+            self.size += 1
+        else:
+            self.size += len(var)
+        return name
+
+    def get_size():
+        return self.size
 
     def run(self):
         """
@@ -33,8 +50,9 @@ class Slave:
             if tag == Tags.GET_SIZE:
                 self.comm.send(self.size, dest=0, tag=Tags.GET_SIZE)
             if tag == Tags.ALLOC:
-                self.mem.append(data)
-                self.comm.send(self.size, dest=0, tag=Tags.ALLOC)
+                #self.mem.append(data)
+                name = self.allocate(data)
+                self.comm.send(name, dest=0, tag=Tags.ALLOC)
                 self.size += 1
             if tag == Tags.READ:
                 self.comm.send(self.mem[data], dest=0, tag=Tags.READ)
