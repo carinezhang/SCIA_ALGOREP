@@ -37,9 +37,9 @@ class Master:
 
 
     def allocate(self, obj):
-        lens = sorted(self.get_size(), key=lambda x: x[1], reverse=True)
+        lens = sorted(self.get_size(), key=lambda x: x[1])
         if lens[0][1] >= MAX_SIZE:
-            print('not enough space')
+            raise Exception('not enough space')
         size = lens[0][1]
         if MAX_SIZE - size >= len(obj): #if we have enough space to stock everything at once
             if isinstance(obj, int):
@@ -52,6 +52,9 @@ class Master:
             var = self.comm.recv(source=p, tag=Tags.ALLOC)
             return (type(obj), ['{}-{}-{}'.format(p,send_size, var)])
         
+        total_lens = sum(MAX_SIZE - n for _, n in lens)
+        if total_lens < len(obj):
+            raise Exception('not enough space')
         #when the list can't fit in one process
         list_var = []
         curr = 0
@@ -126,7 +129,7 @@ def main():
     if rank == 0: # Master
 
         app = Master(slaves=range(1, size))
-        v = app.allocate([i for i in range(1, 10)])
+        v = app.allocate([i for i in range(1, 100)])
         print('read', app.read(v))
         print('modify', app.modify(v, 56, 7))
         print('read', app.read(v))
