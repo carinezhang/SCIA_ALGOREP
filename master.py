@@ -5,7 +5,7 @@ import numpy as np
 from enum import IntEnum
 from slave import Slave
 
-Tags = IntEnum('Tags', 'GET_SIZE ALLOC READ READY START DONE EXIT')
+Tags = IntEnum('Tags', 'GET_SIZE ALLOC READ READY START DONE EXIT MODIFY')
 MAX_SIZE=6
 
 class Master:
@@ -42,11 +42,15 @@ class Master:
             print('not enough space')
         size = lens[0][1]
         if MAX_SIZE - size >= len(obj): #if we have enough space to stock everything at once
+            if isinstance(obj, int):
+                send_size = 1
+            else:
+                send_size = len(obj)
             p = lens[0][0]
             size = lens[0][1]
             self.comm.send((obj, time.time()), dest=p, tag=Tags.ALLOC)
             var = self.comm.recv(source=p, tag=Tags.ALLOC)
-            return (type(obj), ['{}-{}'.format(p, var)])
+            return (type(obj), ['{}-{}-{}'.format(p,send_size, var)])
         
         #when the list can't fit in one process
         list_var = []
@@ -55,9 +59,10 @@ class Master:
             disponible_size = MAX_SIZE - length
             up = curr + disponible_size
             if up > len(obj):
-                up = len(obj) - 1
+                up = len(obj)
+            send_size = up-curr
             self.comm.send((obj[curr:up], time.time()), dest=p, tag=Tags.ALLOC)
-            list_var.append('{}-{}'.format(p, self.comm.recv(source=p, tag=Tags.ALLOC)))
+            list_var.append('{}-{}-{}'.format(p, send_size, self.comm.recv(source=p, tag=Tags.ALLOC)))
             curr += disponible_size
             if curr > len(obj):
                 break
@@ -68,18 +73,36 @@ class Master:
         if len(var[1]) <= 1:
             v = var_list[0].split('-')
             p = int(v[0])
-            key = v[1]
+            key = v[2]
             self.comm.send(key, dest=p, tag=Tags.READ)
             return self.comm.recv(source=p, tag=Tags.READ)
         res = []
         for v in var_list:
             p = int(v.split('-')[0])
-            key = v.split('-')[1]
+            key = v.split('-')[2]
             self.comm.send(key, dest=p, tag=Tags.READ)
             tmp = (self.comm.recv(source=p, tag=Tags.READ))
-            res.extend(tmp[0])
+            res.extend(tmp)
         return res
 
+    def modify(self, var_name, new_val, index):
+        if var_name[0] == int:
+            p = int(var_name[1][0].split('-')[0])
+            key = var_name[1][0].split('-')[2]
+            self.comm.send((key, new_val, 0, time.time()), dest=p, tag=Tags.MODIFY)
+            return self.comm.recv(source=p, tag=Tags.MODIFY)
+        pos = 0
+
+        for v in var_name[1]:
+            tmp = v.split('-')
+            p = int(tmp[0])
+            size = int(tmp[1])
+            key = tmp[2]
+            if pos + size > index:
+                self.comm.isend((key, new_val, index-pos, time.time()), dest=p, tag=Tags.MODIFY)
+                return self.comm.recv(source=p, tag=Tags.MODIFY)
+            pos += size
+        return False
 
 
     def terminate_slaves(self):
@@ -104,6 +127,8 @@ def main():
 
         app = Master(slaves=range(1, size))
         v = app.allocate([i for i in range(1, 10)])
+        print('read', app.read(v))
+        print('modify', app.modify(v, 56, 7))
         print('read', app.read(v))
         app.terminate_slaves()
     else: # Any slave

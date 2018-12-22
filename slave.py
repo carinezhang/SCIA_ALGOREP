@@ -2,7 +2,7 @@ from mpi4py import MPI
 import sys
 import numpy as np
 from enum import IntEnum
-MAX_SIZE = 4096
+MAX_SIZE = 6
 center = 0
 
 Tags = IntEnum('Tags', 'GET_SIZE ALLOC READ READY START DONE EXIT MODIFY')
@@ -42,8 +42,8 @@ class Slave:
         """
         if var_name not in self.mem:
             return False
-        if var_name in self.history or self.history[var_name][-1] > timestamp:
-            return False
+        #if var_name in self.history or self.history[var_name][-1] > timestamp:
+        #    return False
         var = self.mem[var_name]
         if isinstance(var, int):
             self.mem[var_name] = new_var
@@ -88,14 +88,15 @@ class Slave:
                 # TEMPORARY SOLUTION
                 # Change 0 to the timestamp !
                 # !!!!!!!!!!!!!!!!!!
-                name = self.allocate(data, 0)
+                name = self.allocate(data[0], data[1])
                 self.comm.send(name, dest=center, tag=Tags.ALLOC)
                 self.size += 1
             if tag == Tags.READ:
                 var = self.read(data)
                 self.comm.send(var, dest=center, tag=Tags.READ)
-            #if tag == Tags.MODIFY
-
+            if tag == Tags.MODIFY:
+                var = self.modify(data[0], data[1], data[2], data[3])
+                self.comm.send(var, dest=center, tag=Tags.MODIFY)
             elif tag == Tags.EXIT:
                 break
         
