@@ -77,27 +77,27 @@ class Slave:
         status = MPI.Status()
         
         while True:
-            self.comm.send(None, dest=0, tag=Tags.READY)
-            data = self.comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
+            self.comm.send(None, dest=center, tag=Tags.READY)
+            data = self.comm.recv(source=center, tag=MPI.ANY_TAG, status=status)
             tag = status.Get_tag()
     
             if tag == Tags.GET_SIZE:
-                self.comm.send(self.size, dest=0, tag=Tags.GET_SIZE)
+                self.comm.send(self.size, dest=center, tag=Tags.GET_SIZE)
             if tag == Tags.ALLOC:
                 # !!!!!!!!!!!!!!!!!!
                 # TEMPORARY SOLUTION
                 # Change 0 to the timestamp !
                 # !!!!!!!!!!!!!!!!!!
                 name = self.allocate(data, 0)
-                self.comm.send(name, dest=0, tag=Tags.ALLOC)
+                self.comm.send(name, dest=center, tag=Tags.ALLOC)
                 self.size += 1
             if tag == Tags.READ:
                 var = self.read(data)
-                self.comm.send(var, dest=0, tag=Tags.READ)
+                self.comm.send(var, dest=center, tag=Tags.READ)
             #if tag == Tags.MODIFY
 
             elif tag == Tags.EXIT:
                 break
         
-        self.comm.send(None, dest=0, tag=Tags.EXIT)
+        self.comm.send(None, dest=center, tag=Tags.EXIT)
         
