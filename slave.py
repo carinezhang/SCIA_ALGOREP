@@ -98,13 +98,8 @@ class Slave:
             if tag == Tags.GET_SIZE:
                 self.comm.send(self.size, dest=center, tag=Tags.GET_SIZE)
             if tag == Tags.ALLOC:
-                # !!!!!!!!!!!!!!!!!!
-                # TEMPORARY SOLUTION
-                # Change 0 to the timestamp !
-                # !!!!!!!!!!!!!!!!!!
-                name = self.allocate(data[0], data[2])
+                name = self.allocate(data[0], data[1])
                 self.comm.send(name, dest=center, tag=Tags.ALLOC)
-                self.size += data[1]
             if tag == Tags.READ:
                 var = self.read(data)
                 self.comm.send(var, dest=center, tag=Tags.READ)
