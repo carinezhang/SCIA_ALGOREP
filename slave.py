@@ -68,7 +68,7 @@ class Slave:
             return None
         return self.mem[var_name]
 
-    def free(self, var_name):
+    def free(self, var_name, timestamp):
         """
         Remove a variable from the current variable space.
         Return True if variable has been erased, False otherwise.
@@ -76,6 +76,9 @@ class Slave:
         var = self.mem.pop(var_name, None)
         if not var:
             return False
+        if var_name in self.history or self.history[var_name][-1] > timestamp:
+            return False
+        self.history[var_name].append(timestamp)
         if isinstance(var, int):
             self.size -= 1
         else:
