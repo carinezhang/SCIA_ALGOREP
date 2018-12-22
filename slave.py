@@ -35,14 +35,14 @@ class Slave:
         self.history[name] = [timestamp]
         return name
 
-    def modify(self, var_name, new_var, timestamp, index=None):
+    def modify(self, var_name, new_var, index, timestamp):
         """
         Replace a variable by a new one.
         Return True if the variable is modified, False otherwise.
         """
         if var_name not in self.mem:
             return False
-        if self.history[var_name][-1] > timestamp:
+        if var_name in self.history or self.history[var_name][-1] > timestamp:
             return False
         var = self.mem[var_name]
         if isinstance(var, int):
