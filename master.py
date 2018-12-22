@@ -1,4 +1,5 @@
 from mpi4py import MPI
+import time
 import sys
 import numpy as np
 from enum import IntEnum
@@ -39,18 +40,44 @@ class Master:
         lens = sorted(self.get_size(), key=lambda x: x[1], reverse=True)
         if lens[0][1] >= MAX_SIZE:
             print('not enough space')
-        p = lens[0][0]
-        self.comm.send(obj, dest=p, tag=Tags.ALLOC)
-        var = self.comm.recv(source=p, tag=Tags.ALLOC)
-        return (p, var)
-
-        #for i in range(1, len(lens)):
-        #get size of all process
+        size = lens[0][1]
+        if MAX_SIZE - size >= len(obj): #if we have enough space to stock everything at once
+            p = lens[0][0]
+            size = lens[0][1]
+            self.comm.send((obj, time.time()), dest=p, tag=Tags.ALLOC)
+            var = self.comm.recv(source=p, tag=Tags.ALLOC)
+            return (type(obj), ['{}-{}'.format(p, var)])
+        
+        #when the list can't fit in one process
+        list_var = []
+        curr = 0
+        for p, length in lens:
+            disponible_size = MAX_SIZE - length
+            up = curr + disponible_size
+            if up > len(obj):
+                up = len(obj) - 1
+            self.comm.send((obj[curr:up], time.time()), dest=p, tag=Tags.ALLOC)
+            list_var.append('{}-{}'.format(p, self.comm.recv(source=p, tag=Tags.ALLOC)))
+            curr += disponible_size
+            if curr > len(obj):
+                break
+        return (list, list_var)
 
     def read(self, var):
-        print(var[0], var[1])
-        self.comm.send(var[1], dest=var[0], tag=Tags.READ)
-        return self.comm.recv(source=var[0], tag=Tags.READ)
+        var_list = var[1]
+        if len(var[1]) <= 1:
+            v = var_list[0].split('-')
+            p = int(v[0])
+            key = v[1]
+            self.comm.send(key, dest=p, tag=Tags.READ)
+            return self.comm.recv(source=p, tag=Tags.READ)
+        res = []
+        for v in var_list:
+            p = int(v.split('-')[0])
+            key = v.split('-')[1]
+            self.comm.send(key, dest=p, tag=Tags.READ)
+            res.append(self.comm.recv(source=p, tag=Tags.READ))
+        return res
 
 
 
@@ -75,7 +102,7 @@ def main():
     if rank == 0: # Master
 
         app = Master(slaves=range(1, size))
-        v = app.allocate(1)
+        v = app.allocate([i for i in range(1, 10)])
         print('read', app.read(v))
         app.terminate_slaves()
     else: # Any slave
