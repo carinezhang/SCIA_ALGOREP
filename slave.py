@@ -17,7 +17,6 @@ class Slave:
         self.rank = self.comm.Get_rank()
         self.size = 0
         self.mem = dict()
-        self.nb_vars = 0
         self.history = dict()
 
     def allocate(self, var, timestamp):
@@ -25,7 +24,7 @@ class Slave:
         Allocate a variable and return an id associate with the variable. 
         Increase the size taken.
         """
-        name = str(self.rank) + "/" + str(self.nb_vars)
+        name = str(self.rank) + "/" + str(len(self.mem.items()))
         self.mem[name] = var
         # Check if the var is int or list to increase the size
         if isinstance(var, int):
@@ -69,6 +68,23 @@ class Slave:
             return None
         return self.mem[var_name]
 
+    def free(self, var_name, timestamp):
+        """
+        Remove a variable from the current variable space.
+        Return True if variable has been erased, False otherwise.
+        """
+        var = self.mem.pop(var_name, None)
+        if not var:
+            return False
+        if var_name in self.history or self.history[var_name][-1] > timestamp:
+            return False
+        self.history[var_name].append(timestamp)
+        if isinstance(var, int):
+            self.size -= 1
+        else:
+            self.size -= len(var)
+        return True
+        
 
     def run(self):
         """
