@@ -2,10 +2,9 @@ from mpi4py import MPI
 import time
 import sys
 import numpy as np
-from enum import IntEnum
+from tags import Tags
 from slave import Slave
 
-Tags = IntEnum('Tags', 'GET_SIZE ALLOC READ READY START DONE EXIT MODIFY')
 MAX_SIZE=6
 
 class Master:
@@ -37,11 +36,16 @@ class Master:
 
 
     def allocate(self, obj):
+        """
+        Allocate the variable 'obj' and return an id associate with the variable. 
+        Can handle 'int' and 'list' of 'int' types.
+        """
         lens = sorted(self.get_size(), key=lambda x: x[1])
         if lens[0][1] >= MAX_SIZE:
             raise Exception('not enough space')
         size = lens[0][1]
-        if MAX_SIZE - size >= len(obj): #if we have enough space to stock everything at once
+        #if we have enough space to stock everything at once
+        if MAX_SIZE - size >= len(obj):
             if isinstance(obj, int):
                 send_size = 1
             else:
@@ -72,6 +76,9 @@ class Master:
         return (list, list_var)
 
     def read(self, var):
+        """
+        Return the value associated with the var.
+        """
         var_list = var[1]
         if len(var[1]) <= 1:
             v = var_list[0].split('-')
@@ -89,6 +96,10 @@ class Master:
         return res
 
     def modify(self, var_name, new_val, index):
+        """
+        Replace a variable by a new one.
+        Return True if the variable is modified, False otherwise.
+        """
         if var_name[0] == int:
             p = int(var_name[1][0].split('-')[0])
             key = var_name[1][0].split('-')[2]
@@ -102,7 +113,7 @@ class Master:
             size = int(tmp[1])
             key = tmp[2]
             if pos + size > index:
-                self.comm.isend((key, new_val, index-pos, time.time()), dest=p, tag=Tags.MODIFY)
+                self.comm.send((key, new_val, index-pos, time.time()), dest=p, tag=Tags.MODIFY)
                 return self.comm.recv(source=p, tag=Tags.MODIFY)
             pos += size
         return False
@@ -112,33 +123,28 @@ class Master:
         """
         Call this to make all slaves exit their run loop
         """
-
         for s in self.slaves:
             self.comm.send(obj=None, dest=s, tag=Tags.EXIT)
         for s in self.slaves:
             self.comm.recv(source=s, tag=Tags.EXIT)
 
-def main():
+def init():
 
     name = MPI.Get_processor_name()
     rank = MPI.COMM_WORLD.Get_rank()
     size = MPI.COMM_WORLD.Get_size()
-
-    print('I am  %s rank %d (total %d)' % (name, rank, size) )
-
     if rank == 0: # Master
-
-        app = Master(slaves=range(1, size))
-        v = app.allocate([i for i in range(1, 100)])
-        print('read', app.read(v))
-        print('modify', app.modify(v, 56, 7))
-        print('read', app.read(v))
-        app.terminate_slaves()
+        return Master(slaves=range(1, size))
     else: # Any slave
-
         Slave().run()
 
-    print('Task completed (rank %d)' % (rank) )
+def main():
+    app = init()
+    v = app.allocate([i for i in range(1, 100)])
+    print('read', app.read(v))
+    print('modify', app.modify(v, 56, 7))
+    print('read', app.read(v))
+    app.terminate_slaves()
 
 if __name__ == "__main__":
     main()

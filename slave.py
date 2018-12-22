@@ -1,11 +1,10 @@
 from mpi4py import MPI
 import sys
 import numpy as np
-from enum import IntEnum
+from tags import Tags
 MAX_SIZE = 6
 center = 0
 
-Tags = IntEnum('Tags', 'GET_SIZE ALLOC READ READY START DONE EXIT MODIFY')
 
 class Slave:
     """
@@ -91,9 +90,8 @@ class Slave:
         Invoke this method when ready to put this slave to work
         """
         status = MPI.Status()
-        
+
         while True:
-            self.comm.send(None, dest=center, tag=Tags.READY)
             data = self.comm.recv(source=center, tag=MPI.ANY_TAG, status=status)
             tag = status.Get_tag()
     
@@ -104,9 +102,9 @@ class Slave:
                 # TEMPORARY SOLUTION
                 # Change 0 to the timestamp !
                 # !!!!!!!!!!!!!!!!!!
-                name = self.allocate(data[0], data[1])
+                name = self.allocate(data[0], data[2])
                 self.comm.send(name, dest=center, tag=Tags.ALLOC)
-                self.size += 1
+                self.size += data[1]
             if tag == Tags.READ:
                 var = self.read(data)
                 self.comm.send(var, dest=center, tag=Tags.READ)
