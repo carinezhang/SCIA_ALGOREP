@@ -6,7 +6,7 @@ from enum import IntEnum
 from slave import Slave
 
 Tags = IntEnum('Tags', 'GET_SIZE ALLOC READ READY START DONE EXIT')
-MAX_SIZE=4096
+MAX_SIZE=6
 
 class Master:
     """
@@ -76,7 +76,8 @@ class Master:
             p = int(v.split('-')[0])
             key = v.split('-')[1]
             self.comm.send(key, dest=p, tag=Tags.READ)
-            res.append(self.comm.recv(source=p, tag=Tags.READ))
+            tmp = (self.comm.recv(source=p, tag=Tags.READ))
+            res.extend(tmp[0])
         return res
 
 
