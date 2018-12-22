@@ -69,6 +69,20 @@ class Slave:
             return None
         return self.mem[var_name]
 
+    def free(self, var_name):
+        """
+        Remove a variable from the current variable space.
+        Return True if variable has been erased, False otherwise.
+        """
+        var = self.mem.pop(var_name, None)
+        if not var:
+            return False
+        if isinstance(var, int):
+            self.size -= 1
+        else:
+            self.size -= len(var)
+        return True
+        
 
     def run(self):
         """
