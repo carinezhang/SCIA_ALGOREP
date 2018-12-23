@@ -135,16 +135,17 @@ def init():
     size = MPI.COMM_WORLD.Get_size()
     if rank == 0: # Master
         return Master(slaves=range(1, size))
-    else: # Any slave
-        Slave().run()
+     # Any slave
+    Slave().run()
 
 def main():
     app = init()
-    v = app.allocate([i for i in range(1, 100)])
-    print('read', app.read(v))
-    print('modify', app.modify(v, 56, 7))
-    print('read', app.read(v))
-    app.terminate_slaves()
+    if (MPI.COMM_WORLD.Get_rank() == 0):
+        v = app.allocate([i for i in range(1, 10)])
+        print('read', app.read(v))
+        print('modify', app.modify(v, 56, 7))
+        print('read', app.read(v))
+        app.terminate_slaves()
 
 if __name__ == "__main__":
     main()
