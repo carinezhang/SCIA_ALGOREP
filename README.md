@@ -49,9 +49,13 @@ app.terminate_slaves()
 To run the tests, you need to type:
 
 ```
-make tests
+make test
 ```
 
+Or to run the example:
+```
+make example
+```
 
 ## Authors
 
