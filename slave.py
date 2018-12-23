@@ -75,7 +75,7 @@ class Slave:
         var = self.mem.pop(var_name, None)
         if not var:
             return False
-        if var_name in self.history or self.history[var_name][-1] > timestamp:
+        if var_name not in self.history or self.history[var_name][-1] > timestamp:
             return False
         self.history[var_name].append(timestamp)
         if isinstance(var, int):
@@ -106,6 +106,9 @@ class Slave:
             if tag == Tags.MODIFY:
                 var = self.modify(data[0], data[1], data[2], data[3])
                 self.comm.send(var, dest=center, tag=Tags.MODIFY)
+            if tag == Tags.FREE:
+                var = self.free(data[0], data[1])
+                self.comm.send(var, dest=center, tag=Tags.FREE)
             elif tag == Tags.EXIT:
                 break
         

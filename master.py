@@ -117,6 +117,22 @@ class Master:
                 return self.comm.recv(source=p, tag=Tags.MODIFY)
             pos += size
         return False
+    
+    def free(self, var):
+        """
+        Free a variable.
+        Return True if variable has been erased, False otherwise.
+        """
+        for v in var[1]:
+            tmp = v.split('-')
+            p = int(tmp[0])
+            size = int(tmp[1])
+            key = tmp[2]
+            self.comm.send((key, time.time()), dest=p, tag=Tags.FREE)
+            tmp = self.comm.recv(source=p, tag=Tags.FREE)
+            if tmp == False:
+                return False
+        return True
 
 
     def terminate_slaves(self):
@@ -145,6 +161,7 @@ def main():
         print('read', app.read(v))
         print('modify', app.modify(v, 56, 7))
         print('read', app.read(v))
+        print('free', app.free(v))
         app.terminate_slaves()
 
 if __name__ == "__main__":
