@@ -89,7 +89,6 @@ class TestCase:
             self.app.free(r)
 
     def test_big_list_modify(self):
-        res = []
         values = [i for i in range(1,300)]
         var = self.app.allocate(values)
         val = self.app.read(var)
