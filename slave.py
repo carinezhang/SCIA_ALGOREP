@@ -89,9 +89,8 @@ class Slave:
         """
         Invoke this method when ready to put this slave to work
         """
-        status = MPI.Status()
-
         while True:
+            status = MPI.Status()
             data = self.comm.recv(source=center, tag=MPI.ANY_TAG, status=status)
             tag = status.Get_tag()
     
@@ -110,7 +109,8 @@ class Slave:
                 var = self.free(data[0], data[1])
                 self.comm.send(var, dest=center, tag=Tags.FREE)
             elif tag == Tags.EXIT:
-                break
+                exit(0)    
         
-        self.comm.send(None, dest=center, tag=Tags.EXIT)
+
+        
         

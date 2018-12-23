@@ -139,10 +139,12 @@ class Master:
         """
         Call this to make all slaves exit their run loop
         """
+        queue = []
         for s in self.slaves:
-            self.comm.send(obj=None, dest=s, tag=Tags.EXIT)
-        for s in self.slaves:
-            self.comm.recv(source=s, tag=Tags.EXIT)
+            queue.append(self.comm.isend(obj=None, dest=s, tag=Tags.EXIT))
+        for q in queue:
+            q.wait()
+        exit(0)
 
 def init():
 
@@ -156,13 +158,12 @@ def init():
 
 def main():
     app = init()
-    if (MPI.COMM_WORLD.Get_rank() == 0):
-        v = app.allocate([i for i in range(1, 10)])
-        print('read', app.read(v))
-        print('modify', app.modify(v, 56, 7))
-        print('read', app.read(v))
-        print('free', app.free(v))
-        app.terminate_slaves()
+    v = app.allocate([i for i in range(1, 10)])
+    print('read', app.read(v))
+    print('modify', app.modify(v, 56, 7))
+    print('read', app.read(v))
+    print('free', app.free(v))
+    app.terminate_slaves()
 
 if __name__ == "__main__":
     main()
