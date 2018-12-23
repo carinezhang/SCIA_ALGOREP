@@ -109,7 +109,7 @@ class Slave:
                 var = self.free(data[0], data[1])
                 self.comm.send(var, dest=center, tag=Tags.FREE)
             elif tag == Tags.EXIT:
-                exit(0)    
+                sys.exit(0)    
         
 
         

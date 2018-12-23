@@ -30,7 +30,6 @@ class Master:
         for i in range(1,self.comm.Get_size()):
             self.comm.send(None, dest=i, tag=Tags.GET_SIZE)
             length = self.comm.recv(source=i, tag=Tags.GET_SIZE)
-            print("Total length :{} in the process {}.".format(length, i))
             lens.append((i,length))
         return lens
 
@@ -41,15 +40,13 @@ class Master:
         Can handle 'int' and 'list' of 'int' types.
         """
         lens = sorted(self.get_size(), key=lambda x: x[1])
-        if lens[0][1] >= MAX_SIZE:
-            raise Exception('not enough space')
         size = lens[0][1]
+        if isinstance(obj, int):
+            send_size = 1
+        else:
+            send_size = len(obj)
         #if we have enough space to stock everything at once
-        if MAX_SIZE - size >= len(obj):
-            if isinstance(obj, int):
-                send_size = 1
-            else:
-                send_size = len(obj)
+        if MAX_SIZE - size >= send_size:
             p = lens[0][0]
             size = lens[0][1]
             self.comm.send((obj, time.time()), dest=p, tag=Tags.ALLOC)
@@ -95,7 +92,7 @@ class Master:
             res.extend(tmp)
         return res
 
-    def modify(self, var_name, new_val, index):
+    def modify(self, var_name, new_val, index=None):
         """
         Replace a variable by a new one.
         Return True if the variable is modified, False otherwise.
@@ -144,7 +141,7 @@ class Master:
             queue.append(self.comm.isend(obj=None, dest=s, tag=Tags.EXIT))
         for q in queue:
             q.wait()
-        exit(0)
+        sys.exit(0)
 
 def init():
 
@@ -158,7 +155,7 @@ def init():
 
 def main():
     app = init()
-    v = app.allocate([i for i in range(1, 10)])
+    v = app.allocate(5555)
     print('read', app.read(v))
     print('modify', app.modify(v, 56, 7))
     print('read', app.read(v))
