@@ -37,6 +37,23 @@ class TestCase:
         assert self.app.read(v) == new_value
         self.app.free(v)
 
+    def test_int_free(self):
+        value = 55555
+        v = self.app.allocate(value)
+        assert self.app.read(v) == value
+        self.app.free(v)
+        assert self.app.read(v) == None
+
+
+    def test_list_free(self):
+        value = [i for i in range(1, 5)]
+        v = self.app.allocate(value)
+        assert self.app.read(v) == value
+        self.app.free(v)
+        assert self.app.read(v) == None
+
+
+
 def prettyprint(test):
     try:
         test()
@@ -51,6 +68,8 @@ def main():
     prettyprint(test.test_list)
     prettyprint(test.test_modif_int)
     prettyprint(test.test_modif_list)
+    prettyprint(test.test_int_free)
+    prettyprint(test.test_list_free)
     test.app.terminate_slaves()
 
 if __name__ == '__main__':
