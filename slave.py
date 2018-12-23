@@ -64,6 +64,7 @@ class Slave:
         Return None if 0 variable are found.
         """
         if var_name not in self.mem:
+            print("{} doesn't exist in process {}.".format(var_name, self.rank))
             return None
         return self.mem[var_name]
 

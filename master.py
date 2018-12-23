@@ -156,6 +156,11 @@ def init():
 def main():
     app = init()
     v = app.allocate(5555)
+    print(v)
+    v2 = app.allocate([i for i in range(1,5)])
+    print(v2)
+    v3 = app.allocate([i for i in range(1,10)])
+    print(v3)
     print('read', app.read(v))
     print('modify', app.modify(v, 56, 7))
     print('read', app.read(v))
