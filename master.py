@@ -5,22 +5,18 @@ import numpy as np
 from tags import Tags
 from slave import Slave
 
-MAX_SIZE=6
-
 class Master:
     """
     The main process creates one or more of this class that handle groups of
     slave processes
     """
     
-    def __init__(self, slaves = None):
-        
-        if slaves is None:
-            slaves = []
+    def __init__(self, max_size):
             
         self.comm = MPI.COMM_WORLD
         self.status = MPI.Status()        
-        self.slaves = set(slaves)
+        self.slaves = set(range(1, MPI.COMM_WORLD.Get_size()))
+        self.max_size = max_size
     
     def get_size(self):
         '''
@@ -46,21 +42,21 @@ class Master:
         else:
             send_size = len(obj)
         #if we have enough space to stock everything at once
-        if MAX_SIZE - size >= send_size:
+        if self.max_size - size >= send_size:
             p = lens[0][0]
             size = lens[0][1]
             self.comm.send((obj, time.time()), dest=p, tag=Tags.ALLOC)
             var = self.comm.recv(source=p, tag=Tags.ALLOC)
             return (type(obj), ['{}-{}-{}'.format(p,send_size, var)])
         
-        total_lens = sum(MAX_SIZE - n for _, n in lens)
+        total_lens = sum(self.max_size - n for _, n in lens)
         if total_lens < len(obj):
             raise Exception('not enough space')
         #when the list can't fit in one process
         list_var = []
         curr = 0
         for p, length in lens:
-            disponible_size = MAX_SIZE - length
+            disponible_size = self.max_size - length
             up = curr + disponible_size
             if up > len(obj):
                 up = len(obj)
@@ -132,6 +128,7 @@ class Master:
         return True
 
 
+    
     def terminate_slaves(self):
         """
         Call this to make all slaves exit their run loop
@@ -143,14 +140,11 @@ class Master:
             q.wait()
         sys.exit(0)
 
-def init():
+def init(max_size=100):
+    if MPI.COMM_WORLD.Get_rank() == 0: # Master
+        return Master(max_size)
 
-    name = MPI.Get_processor_name()
-    rank = MPI.COMM_WORLD.Get_rank()
-    size = MPI.COMM_WORLD.Get_size()
-    if rank == 0: # Master
-        return Master(slaves=range(1, size))
-     # Any slave
+    # Any slave
     Slave().run()
 
 def main():
@@ -160,6 +154,7 @@ def main():
     print('modify', app.modify(v, 56, 7))
     print('read', app.read(v))
     print('free', app.free(v))
+    print('v', app.read(v))
     app.terminate_slaves()
 
 if __name__ == "__main__":

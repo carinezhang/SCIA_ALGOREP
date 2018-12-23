@@ -2,7 +2,6 @@ from mpi4py import MPI
 import sys
 import numpy as np
 from tags import Tags
-MAX_SIZE = 6
 center = 0
 
 
