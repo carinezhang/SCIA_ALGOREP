@@ -88,6 +88,18 @@ class TestCase:
             assert self.app.read(r) == values[i]
             self.app.free(r)
 
+    def test_big_list_modify(self):
+        res = []
+        values = [i for i in range(1,300)]
+        var = self.app.allocate(values)
+        val = self.app.read(var)
+        assert values == val
+        for i, v in enumerate(val):
+            assert self.app.modify(var, v*2, i) == True
+        assert self.app.read(var) == [i*2 for i in range(1,300)]
+        self.app.free(var)
+
+
 def prettyprint(test):
     try:
         test()
@@ -108,6 +120,7 @@ def main():
     prettyprint(test.test_list_in_multiple_processes)
     prettyprint(test.test_add_lots_of_int)
     prettyprint(test.test_add_lots_of_list)
+    prettyprint(test.test_big_list_modify)
     test.app.terminate_slaves()
 
 if __name__ == '__main__':
