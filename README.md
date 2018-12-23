@@ -18,7 +18,7 @@ from master import init
 
 ### Initialization
 ```
-app = init()
+app = init(max_size=100)
 ```
 ### Allocation
 ```
