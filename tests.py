@@ -3,8 +3,8 @@ from mpi4py import MPI
 
 
 class TestCase:
-    def __init__(self):
-        self.app = init()
+    def __init__(self, max_size):
+        self.app = init(max_size)
 
     def test_int(self):
         value = 55555
@@ -98,6 +98,23 @@ class TestCase:
         assert self.app.read(var) == [i*2 for i in range(1,300)]
         self.app.free(var)
 
+    def test_list_small_max_size(self):
+        value1 = [5,10]
+        value2 = [100]
+        value3 = [111]
+        value4 = [1]
+
+        v1 = self.app.allocate(value1)
+        v2 = self.app.allocate(value2)
+        v3 = self.app.allocate(value3)
+        v4 = self.app.allocate(value4)
+
+        assert self.app.read(v1) == value1
+        assert self.app.read(v2) == value2
+        assert self.app.read(v3) == value3
+        assert self.app.read(v4) == value4
+
+
 
 def prettyprint(test):
     try:
@@ -107,7 +124,7 @@ def prettyprint(test):
         print(test.__name__, ': FAIL')
 
 def main():
-    test = TestCase()
+    test = TestCase(100)
     prettyprint(test.test_int)
     prettyprint(test.test_list)
     prettyprint(test.test_modif_int)
@@ -119,7 +136,10 @@ def main():
     prettyprint(test.test_add_lots_of_int)
     prettyprint(test.test_add_lots_of_list)
     prettyprint(test.test_big_list_modify)
+    test2 = TestCase(2)
+    prettyprint(test2.test_list_small_max_size)
     test.app.terminate_slaves()
+    test2.app.terminate_slaves()
 
 if __name__ == '__main__':
     main()
