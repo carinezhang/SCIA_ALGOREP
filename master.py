@@ -80,12 +80,17 @@ class Master:
             self.comm.send(key, dest=p, tag=Tags.READ)
             return self.comm.recv(source=p, tag=Tags.READ)
         res = []
+        is_none = True
         for v in var_list:
             p = int(v.split('-')[0])
             key = v.split('-')[2]
             self.comm.send(key, dest=p, tag=Tags.READ)
             tmp = (self.comm.recv(source=p, tag=Tags.READ))
-            res.extend(tmp)
+            if tmp != None:
+                is_none = False
+                res.extend(tmp)
+        if is_none:
+            return None
         return res
 
     def modify(self, var_name, new_val, index=None):
