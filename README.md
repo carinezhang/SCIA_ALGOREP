@@ -23,6 +23,7 @@ app = init()
 ### Allocation
 ```
 v = app.allocate(1)
+v2 = app.allocate([1, 2, 3, 4])
 ```
 ### Reading
 ```
@@ -30,7 +31,8 @@ app.read(v)
 ```
 ### Modifying
 ```
-app.modify(v, 2)
+app.modify(v, new_value)
+app.modify(v2, new_value, index)
 ```
 ### Free
 ```
