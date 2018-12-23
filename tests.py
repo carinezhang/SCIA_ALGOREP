@@ -36,6 +36,17 @@ class TestCase:
         assert self.app.modify(v, 10, 1) == True
         assert self.app.read(v) == new_value
         self.app.free(v)
+    
+    def test_modif_list_wrong_index(self):
+        old_value = [i for i in range(1,5)]
+        new_value = old_value
+        new_value[1] = 10
+        v = self.app.allocate(old_value)
+        assert self.app.read(v) == old_value
+        assert self.app.modify(v, 10, 100) == False
+        assert self.app.read(v) == old_value
+        self.app.free(v)
+
 
     def test_int_free(self):
         value = 55555
@@ -91,6 +102,7 @@ def main():
     prettyprint(test.test_list)
     prettyprint(test.test_modif_int)
     prettyprint(test.test_modif_list)
+    prettyprint(test.test_modif_list_wrong_index)
     prettyprint(test.test_int_free)
     prettyprint(test.test_list_free)
     prettyprint(test.test_list_in_multiple_processes)
