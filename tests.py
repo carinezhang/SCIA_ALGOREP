@@ -103,10 +103,9 @@ class TestCase:
 def prettyprint(test):
     try:
         test()
+        print(test.__name__, ': OK')
     except:
         print(test.__name__, ': FAIL')
-    finally:
-        print(test.__name__, ': OK')
 
 def main():
     test = TestCase()
