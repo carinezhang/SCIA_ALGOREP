@@ -52,7 +52,30 @@ class TestCase:
         self.app.free(v)
         assert self.app.read(v) == None
 
+    def test_list_in_multiple_processes(self):
+        value = [i for i in range(1, 200)]
+        v = self.app.allocate(value)
+        assert len(v[1]) >= 2
+        assert self.app.read(v) == value
+        self.app.free(v)
 
+    def test_add_lots_of_int(self):
+        res = []
+        values = [i for i in range(1, 200)]
+        for val in values:
+            res.append(self.app.allocate(val))
+        for i, r in enumerate(res):
+            assert self.app.read(r) == values[i]
+            self.app.free(r)
+
+    def test_add_lots_of_list(self):
+        res = []
+        values = [[i for i in range(1, 5)] for j in range(1,10)]
+        for val in values:
+            res.append(self.app.allocate(val))
+        for i, r in enumerate(res):
+            assert self.app.read(r) == values[i]
+            self.app.free(r)
 
 def prettyprint(test):
     try:
@@ -70,6 +93,9 @@ def main():
     prettyprint(test.test_modif_list)
     prettyprint(test.test_int_free)
     prettyprint(test.test_list_free)
+    prettyprint(test.test_list_in_multiple_processes)
+    prettyprint(test.test_add_lots_of_int)
+    prettyprint(test.test_add_lots_of_list)
     test.app.terminate_slaves()
 
 if __name__ == '__main__':
